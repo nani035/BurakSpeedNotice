@@ -1,6 +1,98 @@
 -- BurakSpeedNotice.lua | Made by Burak
 
 local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local boostEnabled = false
+
+-- Remote for pets
+local spawnPetRemote = ReplicatedStorage:FindFirstChild("SpawnPet") or ReplicatedStorage:WaitForChild("SpawnPet")
+local petList = {
+    ["Dragon Fly"] = "Dragon Fly",
+    ["Caterpillar"] = "Caterpillar",
+    ["Butterfly"] = "Butterfly",
+    ["Bee"] = "Bee",
+    ["Snail"] = "Snail",
+    ["Fire Fly"] = "Fire Fly",
+    ["Lady Bug"] = "Lady Bug",
+}
+
+-- On-screen notice
+local function showNotice(text)
+    StarterGui:SetCore("SendNotification", {
+        Title = "BurakSpeed",
+        Text = text,
+        Duration = 3
+    })
+end
+
+-- Toggle boost
+local function toggleBoost()
+    boostEnabled = not boostEnabled
+    if boostEnabled then
+        humanoid.WalkSpeed = 60
+        humanoid.JumpPower = 120
+        showNotice("Boost ON")
+    else
+        humanoid.WalkSpeed = 16
+        humanoid.JumpPower = 50
+        showNotice("Boost OFF")
+    end
+end
+
+-- Create floating sign
+local head = character:WaitForChild("Head")
+local sign = Instance.new("BillboardGui", head)
+sign.Name = "BurakSign"
+sign.Size = UDim2.new(0, 100, 0, 40)
+sign.StudsOffset = Vector3.new(0, 2, 0)
+sign.AlwaysOnTop = true
+
+local textButton = Instance.new("TextButton", sign)
+textButton.Size = UDim2.new(1, 0, 1, 0)
+textButton.BackgroundTransparency = 0.3
+textButton.BackgroundColor3 = Color3.new(0.2, 0.6, 1)
+textButton.Text = "Toggle Boost"
+textButton.TextScaled = true
+textButton.TextColor3 = Color3.new(1, 1, 1)
+textButton.Font = Enum.Font.GothamBold
+
+textButton.MouseButton1Click:Connect(toggleBoost)
+
+-- Chat commands
+LocalPlayer.Chatted:Connect(function(msg)
+    local lowered = msg:lower()
+    if lowered:sub(1, 10) == "/spawnpet " then
+        local petName = msg:sub(11)
+        if petList[petName] then
+            spawnPetRemote:FireServer(petList[petName])
+            showNotice("Spawned: " .. petName)
+        else
+            showNotice("Invalid Pet: " .. petName)
+        end
+    elseif lowered == "/spawnallpets" then
+        for petName, _ in pairs(petList) do
+            spawnPetRemote:FireServer(petName)
+            wait(0.2)
+        end
+        showNotice("Spawned All Pets")
+    end
+end)
+
+-- Reapply when character respawns
+LocalPlayer.CharacterAdded:Connect(function(char)
+    character = char
+    humanoid = char:WaitForChild("Humanoid")
+    wait(1)
+    toggleBoost()
+end)-- BurakSpeedNotice.lua | Made by Burak
+
+local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 
